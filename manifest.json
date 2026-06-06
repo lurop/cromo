@@ -1,0 +1,22 @@
+{
+  "name": "Cromo",
+  "short_name": "Cromo",
+  "description": "Álbum de figuritas digital — colección, intercambio y juego.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0a07",
+  "theme_color": "#0c0a07",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

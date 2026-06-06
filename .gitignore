@@ -1,0 +1,14 @@
+# Claude Code workspace
+.claude/
+
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

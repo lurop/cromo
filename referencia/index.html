@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#14110d">
+<title>Cromo — Noche de campeón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0a07; --panel:#171309; --panel2:#1f1a0f;
+  --gold:#D4AF37; --gold-lt:#F0D77B; --gold-dk:#A8842A;
+  --cream:#F4EEE3; --muted:#B8AE9C; --dim:#857B69;
+  --comun:#9DA3AB; --especial:#4FA3E3; --brillante:#9B6DD6; --legendaria:#D4AF37;
+  --line:rgba(212,175,55,.16);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Hanken Grotesk',sans-serif;
+  background:radial-gradient(ellipse at 50% -10%, #241d12 0%, #14110d 42%, #0a0806 100%) fixed;
+  color:var(--cream); min-height:100vh;
+}
+#app{
+  max-width:440px; margin:0 auto; min-height:100vh; position:relative;
+  padding-bottom:78px; overflow:hidden;
+  background:linear-gradient(180deg, rgba(255,255,255,.015), transparent 30%);
+  border-left:1px solid rgba(212,175,55,.07); border-right:1px solid rgba(212,175,55,.07);
+}
+#app::before{
+  content:""; position:fixed; top:-120px; left:50%; transform:translateX(-50%);
+  width:480px; height:340px; border-radius:50%; pointer-events:none; z-index:0;
+  background:radial-gradient(circle, rgba(212,175,55,.16), transparent 68%);
+}
+.au{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.5px;text-transform:uppercase;}
+.gold-text{
+  background:linear-gradient(160deg,var(--gold-lt),var(--gold) 55%,var(--gold-dk));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+/* Header */
+header{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 12px; backdrop-filter:blur(10px);
+  background:linear-gradient(180deg, rgba(16,13,8,.92), rgba(16,13,8,.62));
+  border-bottom:1px solid var(--line);
+}
+.brand{font-size:25px;line-height:1;}
+.stats{display:flex;gap:8px;align-items:center;}
+.chip{
+  display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;
+  background:rgba(212,175,55,.08);border:1px solid var(--line);
+  font-weight:700;font-size:14px;color:var(--cream);
+}
+.chip svg{width:15px;height:15px;display:block;}
+.chip.flame{color:#F0B046;}
+
+/* Layout */
+main{position:relative;z-index:1;padding:18px 16px 8px;}
+.sec-title{font-size:13px;letter-spacing:1.5px;color:var(--gold);margin:0 0 2px;}
+.h1{font-size:30px;line-height:1.04;margin:0 0 16px;}
+.muted{color:var(--muted);} .dim{color:var(--dim);}
+
+/* Buttons */
+.btn{
+  font-family:'Hanken Grotesk';font-weight:700;font-size:16px;border:none;cursor:pointer;
+  border-radius:14px;padding:15px 18px;width:100%;color:#241a05;letter-spacing:.2px;
+  background:linear-gradient(150deg,var(--gold-lt),var(--gold) 60%,var(--gold-dk));
+  box-shadow:0 6px 22px rgba(212,175,55,.22), inset 0 1px 0 rgba(255,255,255,.4);
+  transition:transform .12s ease, box-shadow .2s ease;
+}
+.btn:active{transform:scale(.975);}
+.btn:disabled{filter:grayscale(.7) brightness(.65);box-shadow:none;cursor:default;color:#0a0806;}
+.btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--line);box-shadow:none;}
+.btn.sm{font-size:13px;padding:9px 12px;border-radius:10px;width:auto;}
+
+/* Pack card */
+.pack{
+  position:relative;border-radius:22px;padding:30px 22px 26px;margin-bottom:16px;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(212,175,55,.16), transparent 60%),
+    linear-gradient(165deg,#211a0e,#15110a 70%);
+  border:1px solid rgba(212,175,55,.3);
+  box-shadow:0 14px 40px rgba(0,0,0,.5), inset 0 0 40px rgba(212,175,55,.05);
+  text-align:center;
+}
+.pack .ribbon{font-size:11px;letter-spacing:3px;color:var(--gold);}
+.pack .crest{
+  width:96px;height:96px;margin:14px auto 12px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle,#2a2210,#15110a);border:2px solid var(--gold);
+  box-shadow:0 0 30px rgba(212,175,55,.35), inset 0 0 18px rgba(212,175,55,.25);
+}
+.pack .crest svg{width:46px;height:46px;}
+.pack h2{font-size:27px;margin:6px 0 2px;}
+.pack .sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+.pack .count{font-size:12px;color:var(--gold);margin-top:12px;letter-spacing:.5px;}
+
+/* Cards (daily / pity) */
+.card{
+  background:linear-gradient(165deg,rgba(255,255,255,.025),transparent), var(--panel);
+  border:1px solid var(--line); border-radius:16px; padding:16px;margin-bottom:14px;
+}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.streak-dots{display:flex;gap:6px;margin-top:12px;}
+.sd{flex:1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);}
+.sd.on{background:linear-gradient(90deg,var(--gold-lt),var(--gold-dk));}
+.sd.gift{background:rgba(212,175,55,.2);}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:10px;}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-lt),var(--gold));border-radius:99px;}
+
+/* Flag + jersey */
+.flag{width:17px;height:11px;border-radius:2px;border:.5px solid rgba(255,255,255,.3);
+  display:inline-block;vertical-align:-1px;flex:0 0 auto;}
+.jsvg{width:86%;height:86%;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));}
+
+/* Album */
+.pages{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+.pages::-webkit-scrollbar{display:none;}
+.page-tab{
+  flex:0 0 auto;padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.04);border:1px solid transparent;color:var(--muted);white-space:nowrap;
+}
+.page-tab.active{color:#241a05;background:linear-gradient(150deg,var(--gold-lt),var(--gold-dk));}
+.prog-line{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;}
+.prog-line .pct{font-size:15px;color:var(--gold);font-weight:700;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+
+.slot{aspect-ratio:.74;border-radius:13px;position:relative;overflow:hidden;}
+.slot.empty{
+  border:1.5px dashed rgba(212,175,55,.2);background:rgba(255,255,255,.015);
+  display:grid;place-items:center;
+}
+.slot.empty .jsvg{width:72%;height:72%;opacity:.95;filter:none;}
+.slot.empty .lock{position:absolute;bottom:6px;right:6px;width:16px;height:16px;color:var(--dim);}
+.slot.empty .lock svg{width:100%;height:100%;}
+
+.sticker{
+  height:100%;display:flex;flex-direction:column;border-radius:13px;overflow:hidden;
+  border:1.5px solid var(--rc,#555);background:var(--panel2);
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+.sticker .photo{
+  flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 42%, #2c2614, #14110b 72%);
+}
+.sticker .photo .rdot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--rc);box-shadow:0 0 6px var(--rc);}
+.sticker .label{padding:7px 6px 8px;background:rgba(0,0,0,.28);}
+.sticker .label .ct{display:flex;align-items:center;justify-content:center;gap:5px;}
+.sticker .label .ct b{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sticker .label .rar{display:block;text-align:center;font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:var(--rc);font-weight:700;margin-top:2px;}
+
+/* foil for legendaria */
+.foil{padding:2px;border-radius:14px;height:100%;
+  background:linear-gradient(135deg,#F6E08B,#D4AF37 40%,#8a6a1f 60%,#F0D77B 85%);
+  background-size:200% 200%;animation:foilmove 4s linear infinite;}
+.foil .sticker{border-color:transparent;height:100%;}
+.foil .photo::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);
+  transform:translateX(-120%);animation:shine 3.2s ease-in-out infinite;}
+@keyframes foilmove{0%{background-position:0 0;}100%{background-position:200% 200%;}}
+@keyframes shine{0%,100%{transform:translateX(-120%);}55%,70%{transform:translateX(120%);}}
+
+/* Tienda */
+.shop-item{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;
+  background:var(--panel);border:1px solid var(--line);margin-bottom:10px;}
+.mini{width:48px;height:62px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 42%,#2c2614,#14110b);border:1px solid var(--line);}
+.mini .jsvg{width:84%;height:84%;}
+.shop-item .info{flex:1;min-width:0;}
+.shop-item .info .ct{display:flex;align-items:center;gap:6px;}
+.shop-item .info .ct b{font-size:14px;font-weight:600;}
+.shop-item .info .r{font-size:11px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;margin-top:2px;display:block;}
+.cost{display:flex;align-items:center;gap:5px;font-weight:700;font-size:14px;color:var(--gold);}
+.cost svg{width:13px;height:13px;}
+
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-state svg{width:40px;height:40px;opacity:.4;margin-bottom:12px;}
+
+/* Nav */
+nav{
+  position:fixed;left:0;right:0;bottom:0;max-width:440px;margin:0 auto;z-index:30;
+  display:flex;backdrop-filter:blur(12px);
+  background:linear-gradient(0deg, rgba(14,11,7,.97), rgba(14,11,7,.8));
+  border-top:1px solid var(--line);padding:9px 6px calc(9px + env(safe-area-inset-bottom));
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--dim);cursor:pointer;font-size:11px;font-weight:600;}
+.nav-item svg{width:23px;height:23px;}
+.nav-item.active{color:var(--gold);}
+
+/* Reveal overlay */
+.overlay{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(ellipse at 50% 35%, rgba(40,32,16,.96), rgba(7,6,4,.99));
+  animation:fade .25s ease;}
+@keyframes fade{from{opacity:0;}to{opacity:1;}}
+.reveal-title{font-size:13px;letter-spacing:3px;color:var(--gold);margin-bottom:18px;text-align:center;}
+.reveal-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:380px;margin-bottom:8px;}
+.rcard{width:96px;height:130px;perspective:900px;}
+.rcard .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.2,.8,.25,1);}
+.rcard.flipped .inner{transform:rotateY(180deg);}
+.rcard .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px;overflow:hidden;}
+.rcard .back{display:grid;place-items:center;
+  background:radial-gradient(circle,#2a2210,#15110a);border:2px solid var(--gold);}
+.rcard .back svg{width:30px;height:30px;opacity:.85;}
+.rcard .front{transform:rotateY(180deg);}
+.rcard.leg .front{box-shadow:0 0 26px rgba(212,175,55,.7);animation:legpulse 1.6s ease-in-out infinite;}
+@keyframes legpulse{0%,100%{box-shadow:0 0 18px rgba(212,175,55,.5);}50%{box-shadow:0 0 34px rgba(212,175,55,.9);}}
+.rcard .newtag{position:absolute;top:-7px;left:50%;transform:translateX(-50%);z-index:3;
+  font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:99px;
+  background:var(--gold);color:#241a05;}
+.tally{font-size:14px;color:var(--cream);text-align:center;margin:14px 0 18px;min-height:20px;}
+.tally b{color:var(--gold);}
+.confetti{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;z-index:1;
+  animation:cfall linear forwards;}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0);opacity:1;}
+  100%{transform:translateY(105vh) rotate(540deg);opacity:.9;}}
+
+footer{text-align:center;font-size:11px;color:var(--dim);padding:14px 0 4px;letter-spacing:.5px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand au gold-text">Cromo</div>
+    <div class="stats">
+      <div class="chip flame" id="streakChip"></div>
+      <div class="chip" id="purpChip"></div>
+    </div>
+  </header>
+  <main id="view"></main>
+  <nav id="nav"></nav>
+</div>
+
+<script>
+/* ---------- Iconos ---------- */
+const ICON = {
+  gem:'<svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12l3 6-9 12L3 9l3-6Z" fill="#F0D77B" stroke="#A8842A" stroke-width="1"/><path d="M3 9h18M9 3 7 9l5 12M15 3l2 6-5 12" stroke="#A8842A" stroke-width="1" opacity=".7"/></svg>',
+  flame:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-1 .3-2 .8-2.8C7.5 9 8 11 9 11c0-3 2-5 3-9Z"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="#F0D77B"><path d="m12 2 2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7L12 2Z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  pack:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7Z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>',
+  album:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v18M4 9h16M4 15h16"/></svg>',
+  shop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 9h16l-1 11H5L4 9Z"/><path d="M8 9a4 4 0 0 1 8 0"/></svg>',
+};
+
+/* ---------- Banderas (SVG propias, simplificadas) ---------- */
+const FLAGS = {
+  arg:'<svg viewBox="0 0 24 16" class="flag"><rect width="24" height="16" fill="#74ACDF"/><rect y="5.33" width="24" height="5.34" fill="#fff"/><circle cx="12" cy="8" r="1.7" fill="#F6B40E"/></svg>',
+  bra:'<svg viewBox="0 0 24 16" class="flag"><rect width="24" height="16" fill="#009C3B"/><polygon points="12,2 22,8 12,14 2,8" fill="#FFDF00"/><circle cx="12" cy="8" r="3" fill="#002776"/></svg>',
+  fra:'<svg viewBox="0 0 24 16" class="flag"><rect width="8" height="16" fill="#0055A4"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#EF4135"/></svg>',
+};
+const flag = id => FLAGS[id] || '';
+
+/* ---------- Datos ---------- */
+const RAR = {
+  comun:     {label:'Común',     color:'#9DA3AB', drop:.70, dupe:1,  cost:8},
+  especial:  {label:'Especial',  color:'#4FA3E3', drop:.22, dupe:5,  cost:30},
+  brillante: {label:'Brillante', color:'#9B6DD6', drop:.07, dupe:20, cost:90},
+  legendaria:{label:'Legendaria',color:'#D4AF37', drop:.01, dupe:100,cost:400},
+};
+/* Colores actuales de cada selección (sin escudos ni marcas) */
+const TEAMS = [
+  {id:'arg', name:'Argentina', kit:{type:'stripes', base:'#6FB1E6', side:'#FFFFFF', trim:'#0B2A4A', num:'#0B2A4A'}},
+  {id:'bra', name:'Brasil',    kit:{type:'solid',   base:'#FFD400', side:'#FFD400', trim:'#00803D', num:'#00471F'}},
+  {id:'fra', name:'Francia',   kit:{type:'solid',   base:'#1F347A', side:'#1F347A', trim:'#FFFFFF', num:'#FFFFFF'}},
+];
+const RPATTERN = ['comun','comun','comun','especial','comun','comun','especial','brillante','especial','legendaria','comun'];
+const ROSTER = [];
+TEAMS.forEach(t=>{ for(let i=0;i<11;i++) ROSTER.push({id:t.id+'-'+(i+1), team:t.id, num:i+1, rar:RPATTERN[i]}); });
+const TOTAL = ROSTER.length;
+
+/* ---------- Camiseta (SVG) ---------- */
+let _jid = 0;
+function jersey(t, num, ghost){
+  const id='j'+(_jid++), k=t.kit;
+  const shirt="M50 13 C44 19 36 19 31 14 L19 18 L8 41 L22 49 L27 41 L27 87 L73 87 L73 41 L78 49 L92 41 L81 18 L69 14 C64 19 56 19 50 13 Z";
+  const collar="M31 14 C36 19 44 19 50 13 C56 19 64 19 69 14";
+  if(ghost){
+    return `<svg viewBox="0 0 100 100" class="jsvg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="${shirt}" fill="rgba(255,255,255,.03)" stroke="rgba(212,175,55,.18)" stroke-width="1.5" stroke-linejoin="round"/>
+      <text x="50" y="64" text-anchor="middle" font-family="Anton,sans-serif" font-size="34" fill="rgba(212,175,55,.16)">${num}</text>
+    </svg>`;
+  }
+  let fillC;
+  if(k.type==='stripes'){
+    let r=''; for(let x=8;x<92;x+=16) r+=`<rect x="${x}" y="8" width="8" height="84" fill="${k.side}"/>`;
+    fillC=`<rect width="100" height="100" fill="${k.base}"/>${r}`;
+  } else {
+    fillC=`<rect width="100" height="100" fill="${k.base}"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" class="jsvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Camiseta número ${num}">
+    <defs><clipPath id="${id}"><path d="${shirt}"/></clipPath></defs>
+    <g clip-path="url(#${id})">${fillC}</g>
+    <path d="${shirt}" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="${collar}" fill="none" stroke="${k.trim}" stroke-width="3.2" stroke-linecap="round"/>
+    <text x="50" y="64" text-anchor="middle" font-family="Anton,sans-serif" font-size="34" fill="${k.num}">${num}</text>
+  </svg>`;
+}
+
+/* ---------- Estado (en memoria) ---------- */
+const state = {
+  tab:'sobres', packs:10, purpurina:30, owned:new Set(),
+  sinceLeg:0, streak:3, dailyClaimed:false, albumTeam:'arg'
+};
+const HARD_PITY = 50, SOFT_FROM = 30;
+const team = id => TEAMS.find(t=>t.id===id);
+const stk  = id => ROSTER.find(s=>s.id===id);
+
+/* ---------- Lógica de sobres ---------- */
+function legChance(){
+  if(state.sinceLeg < SOFT_FROM) return RAR.legendaria.drop;
+  return Math.min(.6, RAR.legendaria.drop + (state.sinceLeg - SOFT_FROM + 1) * .025);
+}
+function rollRarity(){
+  const forced = state.sinceLeg + 1 >= HARD_PITY;
+  const w = {legendaria: forced ? 1 : legChance(), brillante:RAR.brillante.drop, especial:RAR.especial.drop, comun:RAR.comun.drop};
+  const sum = w.legendaria + w.brillante + w.especial + w.comun;
+  let r = Math.random()*sum, acc=0;
+  for(const k of ['legendaria','brillante','especial','comun']){ acc+=w[k]; if(r<=acc) return k; }
+  return 'comun';
+}
+function pick(rar){ const pool=ROSTER.filter(s=>s.rar===rar); return pool[Math.floor(Math.random()*pool.length)]; }
+function openPack(){
+  const res=[];
+  for(let i=0;i<5;i++){
+    const rar=rollRarity();
+    if(rar==='legendaria') state.sinceLeg=0; else state.sinceLeg++;
+    const s=pick(rar), isNew=!state.owned.has(s.id);
+    if(isNew) state.owned.add(s.id); else state.purpurina+=RAR[rar].dupe;
+    res.push({s, isNew});
+  }
+  state.packs--; return res;
+}
+function openOne(){ if(state.packs<=0) return; showReveal(openPack()); }
+function claimDaily(){ if(state.dailyClaimed) return; state.dailyClaimed=true; state.streak++; state.packs++; render(); }
+function buy(id){ const s=stk(id), c=RAR[s.rar].cost; if(state.owned.has(id)||state.purpurina<c) return; state.purpurina-=c; state.owned.add(id); render(); }
+function setTab(t){ state.tab=t; render(); }
+function setTeam(t){ state.albumTeam=t; render(); }
+
+/* ---------- Render: header + nav ---------- */
+function renderChrome(){
+  streakChip.innerHTML = ICON.flame + state.streak;
+  purpChip.innerHTML   = ICON.gem + state.purpurina;
+  const items=[['sobres','Sobres',ICON.pack],['album','Álbum',ICON.album],['tienda','Tienda',ICON.shop]];
+  nav.innerHTML = items.map(([id,l,ic])=>
+    `<div class="nav-item ${state.tab===id?'active':''}" onclick="setTab('${id}')">${ic}<span>${l}</span></div>`).join('');
+}
+
+/* ---------- Sticker ---------- */
+function stickerHTML(s){
+  const t=team(s.team), r=RAR[s.rar];
+  const inner=`
+    <div class="sticker" style="--rc:${r.color}">
+      <div class="photo"><span class="rdot"></span>${jersey(t,s.num)}</div>
+      <div class="label">
+        <div class="ct">${flag(t.id)}<b>${t.name}</b></div>
+        <span class="rar">${r.label}</span>
+      </div>
+    </div>`;
+  return s.rar==='legendaria' ? `<div class="foil">${inner}</div>` : inner;
+}
+
+/* ---------- Render: sobres ---------- */
+function renderSobres(){
+  const pity = HARD_PITY - state.sinceLeg;
+  const pityPct = Math.min(100, (state.sinceLeg/HARD_PITY)*100);
+  const dots = Array.from({length:7},(_,i)=>{
+    const on = i===6 ? (state.streak%7>=6||state.streak>=7) : ((state.streak%7||7)>i);
+    return `<div class="sd ${i===6?'gift':''} ${on?'on':''}"></div>`;
+  }).join('');
+  view.innerHTML = `
+    <p class="sec-title au">Mundial · edición 2026</p>
+    <h1 class="h1">Tu sobre <span class="gold-text">dorado</span></h1>
+    <div class="pack">
+      <div class="ribbon au">Sobre Mundial</div>
+      <div class="crest">${ICON.star}</div>
+      <h2 class="au">5 figuritas</h2>
+      <div class="sub">Negro y oro. ¿Te toca una legendaria?</div>
+      <button class="btn" onclick="openOne()" ${state.packs<=0?'disabled':''}>${state.packs>0?'Abrir sobre':'Sin sobres'}</button>
+      <div class="count">Te quedan ${state.packs} sobre${state.packs===1?'':'s'}</div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div><b>Sobre diario</b><div class="muted" style="font-size:13px">Racha de ${state.streak} día${state.streak===1?'':'s'} · día 7 = sobre brillante</div></div>
+        <button class="btn sm" onclick="claimDaily()" ${state.dailyClaimed?'disabled':''}>${state.dailyClaimed?'Reclamado':'Reclamar'}</button>
+      </div>
+      <div class="streak-dots">${dots}</div>
+    </div>
+    <div class="card">
+      <div class="row"><b>Garantía de legendaria</b><span class="gold-text" style="font-weight:700">en ${pity}</span></div>
+      <div class="muted" style="font-size:13px;margin-top:3px">Cuantos más sobres abrís sin una dorada, más sube la chance.</div>
+      <div class="bar"><i style="width:${pityPct}%"></i></div>
+    </div>
+    <footer>Prototipo · estilo Noche de campeón · estado en memoria</footer>
+  `;
+}
+
+/* ---------- Render: álbum ---------- */
+function renderAlbum(){
+  const t = state.albumTeam;
+  const players = ROSTER.filter(s=>s.team===t);
+  const ownedHere = players.filter(s=>state.owned.has(s.id)).length;
+  const tabs = TEAMS.map(x=>`<div class="page-tab ${x.id===t?'active':''}" onclick="setTeam('${x.id}')">${flag(x.id)}${x.name}</div>`).join('');
+  const cells = players.map(s=>{
+    if(state.owned.has(s.id)) return `<div class="slot">${stickerHTML(s)}</div>`;
+    return `<div class="slot empty">${jersey(team(t),s.num,true)}<span class="lock">${ICON.lock}</span></div>`;
+  }).join('');
+  view.innerHTML = `
+    <p class="sec-title au">Mi álbum</p>
+    <h1 class="h1" style="margin-bottom:14px">Completá la <span class="gold-text">colección</span></h1>
+    <div class="pages">${tabs}</div>
+    <div class="prog-line">
+      <span class="muted">${team(t).name} · ${ownedHere}/${players.length}</span>
+      <span class="pct">${Math.round(state.owned.size/TOTAL*100)}% total</span>
+    </div>
+    <div class="grid">${cells}</div>
+    <footer>Tocá Tienda para cambiar repetidas por las que te faltan</footer>
+  `;
+}
+
+/* ---------- Render: tienda ---------- */
+function renderTienda(){
+  const missing = ROSTER.filter(s=>!state.owned.has(s.id));
+  const order={legendaria:0,brillante:1,especial:2,comun:3};
+  missing.sort((a,b)=>order[a.rar]-order[b.rar] || a.team.localeCompare(b.team) || a.num-b.num);
+  let body;
+  if(missing.length===0){
+    body = `<div class="empty-state">${ICON.star}<div><b>¡Álbum completo!</b></div><div style="margin-top:6px">Sos leyenda. Pronto: nueva temporada.</div></div>`;
+  } else {
+    body = missing.map(s=>{
+      const t=team(s.team), r=RAR[s.rar], afford=state.purpurina>=r.cost;
+      return `<div class="shop-item">
+        <div class="mini">${jersey(t,s.num)}</div>
+        <div class="info">
+          <div class="ct">${flag(t.id)}<b>${t.name} · #${s.num}</b></div>
+          <span class="r" style="color:${r.color}">${r.label}</span>
+        </div>
+        <button class="btn sm ${afford?'':'ghost'}" onclick="buy('${s.id}')" ${afford?'':'disabled'}>
+          <span class="cost" style="color:${afford?'#241a05':''}">${ICON.gem}${r.cost}</span>
+        </button>
+      </div>`;
+    }).join('');
+  }
+  view.innerHTML = `
+    <p class="sec-title au">Tienda de Purpurina</p>
+    <h1 class="h1" style="margin-bottom:6px">Comprá lo que te <span class="gold-text">falta</span></h1>
+    <div class="card row" style="margin-bottom:16px">
+      <span class="muted">Tu Purpurina (de tus repetidas)</span>
+      <span class="cost" style="font-size:18px">${ICON.gem}${state.purpurina}</span>
+    </div>
+    ${body}
+    <footer>Las repetidas se convierten en Purpurina automáticamente</footer>
+  `;
+}
+
+/* ---------- Reveal ---------- */
+function showReveal(res){
+  const ov=document.createElement('div'); ov.className='overlay';
+  const cards = res.map((c,i)=>{
+    const leg = c.s.rar==='legendaria';
+    return `<div class="rcard ${leg?'leg':''}" data-i="${i}"><div class="inner">
+      <div class="face back">${ICON.star}</div>
+      <div class="face front">${c.isNew?'<div class="newtag">Nueva</div>':''}${stickerHTML(c.s)}</div>
+    </div></div>`;
+  }).join('');
+  const newCount = res.filter(c=>c.isNew).length;
+  const dupGain = res.filter(c=>!c.isNew).reduce((a,c)=>a+RAR[c.s.rar].dupe,0);
+  ov.innerHTML = `
+    <div class="reveal-title au">Abriendo sobre…</div>
+    <div class="reveal-grid">${cards}</div>
+    <div class="tally" id="tally"></div>
+    <div style="width:100%;max-width:320px"><button class="btn" id="contBtn" style="opacity:0;pointer-events:none">Continuar</button></div>`;
+  document.body.appendChild(ov);
+  const rcards=[...ov.querySelectorAll('.rcard')];
+  let hasLeg=false;
+  rcards.forEach((el,i)=>{
+    setTimeout(()=>{ el.classList.add('flipped'); if(el.classList.contains('leg')){ hasLeg=true; burst(ov); } }, 380 + i*340);
+  });
+  setTimeout(()=>{
+    const tally=ov.querySelector('#tally');
+    let txt = `<b>${newCount}</b> nueva${newCount===1?'':'s'}`;
+    if(dupGain>0) txt += ` · <b>+${dupGain}</b> Purpurina`;
+    if(hasLeg) txt = '✦ ¡Legendaria! ✦<br>'+txt;
+    tally.innerHTML = txt;
+    const b=ov.querySelector('#contBtn');
+    b.style.opacity='1'; b.style.pointerEvents='auto';
+    b.onclick=()=>{ ov.remove(); render(); };
+  }, 380 + rcards.length*340 + 350);
+}
+function burst(ov){
+  const cols=['#F0D77B','#D4AF37','#F4EEE3','#7FB2E8','#A8842A'];
+  for(let i=0;i<22;i++){
+    const c=document.createElement('div'); c.className='confetti';
+    c.style.left=Math.random()*100+'%'; c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(1.1+Math.random()*1.1)+'s'; c.style.animationDelay=(Math.random()*.25)+'s';
+    ov.appendChild(c); setTimeout(()=>c.remove(),2600);
+  }
+}
+
+/* ---------- Main render ---------- */
+function render(){
+  renderChrome();
+  if(state.tab==='sobres') renderSobres();
+  else if(state.tab==='album') renderAlbum();
+  else renderTienda();
+}
+render();
+</script>
+</body>
+</html>
