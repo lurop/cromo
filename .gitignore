@@ -12,3 +12,9 @@ Desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# Cloudflare / wrangler (deploy local, no se commitea)
+.wrangler/
+wrangler.toml
+dist/
+node_modules/

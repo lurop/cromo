@@ -14,7 +14,7 @@
   // de cuenta (§4 del CLAUDE.md). En Fase 1 esto vivirá en el perfil.
   // ============================================================
 
-  const DONE_KEY = 'cromo_onboarding_v1';
+  const DONE_KEY = 'cromo_onboarding_v2';
 
   function isDone() {
     try { return localStorage.getItem(DONE_KEY) === '1'; } catch (e) { return false; }
@@ -137,6 +137,10 @@
     if (!active || !curBlocking) return;
     const t = e.target;
     if (t.closest && t.closest('.coach-card')) return;
+    // No bloquear los modales propios (revelado de sobre, notificaciones):
+    // se abren sin pasar por render(), así que la guía sigue activa y, si no,
+    // se comería su botón "Continuar". refresh() la oculta al próximo render.
+    if (t.closest && t.closest('.overlay')) return;
     for (const sel of curAllow) {
       if (t.closest && t.closest(sel)) return;
     }
