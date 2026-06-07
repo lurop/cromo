@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cromo-shell-v17';
+const CACHE_NAME = 'cromo-shell-v18';
 const SHELL_ASSETS = [
   './',
   './index.html',

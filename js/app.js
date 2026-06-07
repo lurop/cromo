@@ -165,10 +165,55 @@
   // Campana — abre el panel y marca todo como leído al cerrar.
   bellBtn.addEventListener('click', () => C.views.showNotifs());
 
-  // Botón de sonido (mute on/off).
-  soundBtn.addEventListener('click', () => {
-    C.audio.toggleMute();
-    renderSound();
+  // Menú de audio: efectos + ambiente de cancha. Va colgado del header para
+  // no sumar otro botón a una barra ya apretada en mobile.
+  let audioMenu = null;
+  function buildAudioMenu() {
+    audioMenu = document.createElement('div');
+    audioMenu.className = 'audio-menu';
+    audioMenu.id = 'audio-menu';
+    audioMenu.hidden = true;
+    audioMenu.innerHTML = `
+      <button class="audio-row" data-audio="sfx" type="button">
+        <span class="audio-ic">${C.ICON.sound}</span>
+        <span class="audio-label">Efectos</span>
+        <span class="audio-switch"></span>
+      </button>
+      <button class="audio-row" data-audio="amb" type="button">
+        <span class="audio-ic">${C.ICON.stadium}</span>
+        <span class="audio-label">Ambiente de cancha</span>
+        <span class="audio-switch"></span>
+      </button>`;
+    document.querySelector('.app-header').appendChild(audioMenu);
+    audioMenu.addEventListener('click', (e) => {
+      const row = e.target.closest('.audio-row');
+      if (!row) return;
+      if (row.dataset.audio === 'sfx') C.audio.toggleMute();
+      else C.audio.toggleAmbient();
+      syncAudioMenu();
+      renderSound();
+    });
+  }
+  function syncAudioMenu() {
+    if (!audioMenu) return;
+    const rows = audioMenu.querySelectorAll('.audio-row');
+    const states = [!C.audio.isMuted(), C.audio.isAmbient()];
+    rows.forEach((row, i) => {
+      row.classList.toggle('on', states[i]);
+      row.querySelector('.audio-switch').setAttribute('data-on', String(states[i]));
+    });
+  }
+  // Botón de sonido → abre/cierra el menú.
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!audioMenu) buildAudioMenu();
+    audioMenu.hidden = !audioMenu.hidden;
+    if (!audioMenu.hidden) syncAudioMenu();
+  });
+  document.addEventListener('click', (e) => {
+    if (!audioMenu || audioMenu.hidden) return;
+    if (e.target.closest('#audio-menu') || e.target.closest('#sound-toggle')) return;
+    audioMenu.hidden = true;
   });
 
   // Tap sutil al navegar por la barra inferior.
