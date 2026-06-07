@@ -5,13 +5,14 @@
 
   // ============================================================
   // Onboarding — guía de primera vez (Fase 0)
-  // Capa de "coach marks": foco (spotlight) sobre un elemento real
-  // + tarjeta con instrucción. NO toca la lógica de juego: avanza
-  // observando el estado real (sobres abiertos, ruta actual, repetidas).
-  // Se redibuja desde C.render() vía refresh(), así sigue al
-  // re-render de cada vista.
-  // "Ya vi la guía" se guarda en localStorage: es cache de UI, no dato
-  // de cuenta (§4 del CLAUDE.md). En Fase 1 esto vivirá en el perfil.
+  // Capa de "coach marks": foco (spotlight) + flecha + tarjeta sobre un
+  // elemento REAL. La guía nunca navega por el usuario: marca la tab/botón
+  // que tiene que tocar y él hace el toque. Avanza observando el estado real
+  // (ruta, sobres abiertos, repetidas), sin tocar la lógica de juego.
+  // Mientras hay un cartel bloqueante: se bloquea el scroll y se centra el
+  // objetivo para que quede bien encuadrado.
+  // "Ya vi la guía" se guarda en localStorage (cache de UI, no dato de
+  // cuenta — §4). En Fase 1 esto vivirá en el perfil de Supabase.
   // ============================================================
 
   const DONE_KEY = 'cromo_onboarding_v2';
@@ -26,28 +27,38 @@
     try { localStorage.removeItem(DONE_KEY); } catch (e) { /* noop */ }
   }
 
-  // Ruta actual (mismo criterio que app.js).
   function route() {
     const raw = (location.hash || '').replace(/^#\/?/, '').toLowerCase();
     return raw || 'album';
   }
 
-  // Definición de pasos. Cada uno avanza por `auto()` (predicado sobre el
-  // estado real) o por el botón `cta` de la tarjeta.
+  // Selectores de las tabs de navegación (las marcamos para que el usuario
+  // toque él mismo, en vez de navegar por él).
+  const TAB = (r) => `a[data-route="${r}"]`;
+
+  // Pasos. `auto()` avanza solo (predicado sobre el estado real); `cta`
+  // avanza por botón de la tarjeta SIN navegar (solo cambia de paso).
   const STEPS = {
     welcome: {
       kind: 'modal',
       eyebrow: 'Bienvenido',
       title: 'Empezá a coleccionar',
-      body: 'En <b>Cromo</b> no se compran los sobres: se ganan. Abrís, completás tu álbum y las repetidas nunca se desperdician. Te muestro el camino en 30 segundos.',
-      // Seteamos el paso y navegamos: el hashchange dispara render()→refresh()
-      // cuando la vista de Sobres ya está pintada (sin parpadeo de la tarjeta).
-      cta: { label: 'Abrir mi primer sobre', go: () => { cur = 'open-pack'; location.hash = '#/sobres'; } }
+      body: 'En <b>Cromo</b> no se compran los sobres: se ganan. Abrís, completás tu álbum y las repetidas nunca se desperdician. Te marco el camino — vos tocás.',
+      cta: { label: '¡Dale, empecemos!', go: () => go('go-sobres') }
+    },
+
+    'go-sobres': {
+      kind: 'spot',
+      target: TAB('sobres'),
+      eyebrow: 'Paso 1 de 3',
+      title: 'Andá a Sobres',
+      body: 'Tocá <b>Sobres</b> en la barra de abajo para conseguir tu primer sobre.',
+      auto: () => route() === 'sobres',
+      next: 'open-pack'
     },
 
     'open-pack': {
       kind: 'spot',
-      requireRoute: 'sobres',
       target: '[data-action="open-pack"]',
       allow: ['[data-action="open-pack"]', '[data-action="open-pack-5"]'],
       eyebrow: 'Paso 1 de 3',
@@ -59,8 +70,7 @@
 
     'go-album': {
       kind: 'spot',
-      target: 'a[data-route="album"]',
-      allow: ['a[data-route="album"]'],
+      target: TAB('album'),
       eyebrow: 'Paso 2 de 3',
       title: 'Mirá tu álbum',
       body: 'Tus figuritas ya están guardadas. Tocá <b>Álbum</b> para verlas.',
@@ -70,13 +80,22 @@
 
     'album-tour': {
       kind: 'spot',
-      requireRoute: 'album',
       target: '.pages',
-      allow: ['.page-tab'],
+      allow: ['.pages', '.page-tab'],
       eyebrow: 'Tu álbum',
       title: 'Una página por selección',
       body: 'Cada bandera es una selección — tocala para cambiar de equipo. Los casilleros en <b>gris</b> son las figuritas que te faltan; completá una línea y se desbloquea su leyenda.',
-      cta: { label: 'Seguir', go: () => { cur = 'await-dupe'; location.hash = '#/sobres'; } }
+      cta: { label: 'Entendido', go: () => go('back-to-sobres') }
+    },
+
+    'back-to-sobres': {
+      kind: 'spot',
+      target: TAB('sobres'),
+      eyebrow: 'Seguí jugando',
+      title: 'Conseguí repetidas',
+      body: 'Volvé a <b>Sobres</b> y seguí abriendo. Te aviso apenas te toque una <b>repetida</b>.',
+      auto: () => route() === 'sobres',
+      next: 'await-dupe'
     },
 
     'await-dupe': {
@@ -88,8 +107,7 @@
 
     dupe: {
       kind: 'spot',
-      target: 'a[data-route="cambios"]',
-      allow: ['a[data-route="cambios"]'],
+      target: TAB('cambios'),
       eyebrow: 'Paso 3 de 3',
       title: '¡Te tocó una repetida!',
       body: 'Las repetidas no se tiran a la basura. Tocá <b>Cambios</b> y te muestro qué hacer con ellas.',
@@ -99,7 +117,6 @@
 
     'dupe-tour': {
       kind: 'spot',
-      requireRoute: 'cambios',
       target: '[data-action="sell-all"]',
       targetFallback: '.trade-banner',
       allow: ['[data-action="sell-all"]', '[data-action="sell"]'],
@@ -114,33 +131,36 @@
   let active = false;
   let cur = 'welcome';
   let curAllow = [];
+  let curTargetSel = null;
   let curBlocking = false;
-  let root = null;       // capa raíz (.coach)
+  let root = null;            // capa raíz (.coach)
+  let builtStep = null;       // qué paso está construido en el DOM (para no re-animar)
+  let scrolledForStep = null; // ya centramos el objetivo de este paso
   let rafPending = false;
+
+  function go(id) { cur = id; refresh(); }
 
   function finish() {
     markDone();
     active = false;
-    curBlocking = false;
     teardownLayer();
   }
 
   function teardownLayer() {
     curBlocking = false;
+    curTargetSel = null;
+    builtStep = null;
+    scrolledForStep = null;
     if (root) { root.remove(); root = null; }
   }
 
-  // Bloqueo: en pasos bloqueantes, todo click que no caiga en el objetivo
-  // permitido ni en la tarjeta se cancela. Captura en fase de captura para
-  // ganarle a los handlers delegados de app.js y a la navegación de las tabs.
+  // Bloqueo de clicks: en pasos bloqueantes, todo toque que no caiga en el
+  // objetivo permitido, la tarjeta o un modal propio se cancela.
   function onCapture(e) {
     if (!active || !curBlocking) return;
     const t = e.target;
     if (t.closest && t.closest('.coach-card')) return;
-    // No bloquear los modales propios (revelado de sobre, notificaciones):
-    // se abren sin pasar por render(), así que la guía sigue activa y, si no,
-    // se comería su botón "Continuar". refresh() la oculta al próximo render.
-    if (t.closest && t.closest('.overlay')) return;
+    if (t.closest && t.closest('.overlay')) return; // revelado / notificaciones
     for (const sel of curAllow) {
       if (t.closest && t.closest(sel)) return;
     }
@@ -148,45 +168,43 @@
     e.stopPropagation();
   }
 
-  // Reposiciona sin re-evaluar transiciones (scroll/resize).
+  // Bloqueo de scroll: mientras hay un cartel bloqueante, cancelamos rueda y
+  // arrastre, salvo dentro de la tarjeta o del propio elemento marcado
+  // (ej. la fila de selecciones, que scrollea en horizontal).
+  function onScrollBlock(e) {
+    if (!active || !curBlocking) return;
+    const t = e.target;
+    if (t.closest && t.closest('.coach-card')) return;
+    if (t.closest && t.closest('.overlay')) return; // revelado / notificaciones
+    if (t.closest && curTargetSel && t.closest(curTargetSel)) return;
+    e.preventDefault();
+  }
+
   function scheduleReposition() {
     if (!active || rafPending) return;
     rafPending = true;
     requestAnimationFrame(() => { rafPending = false; refresh(); });
   }
 
-  // Núcleo: avanza por los pasos cuyo predicado ya se cumple y dibuja el
-  // paso en reposo. Idempotente: seguro de llamar en cada render.
   function refresh() {
     if (!active) return;
 
-    // Cedemos ante modales propios (revelado de sobre, notificaciones):
-    // ocultamos la guía y soltamos el bloqueo para no trabar su botón.
+    // Cedemos ante modales propios (revelado de sobre, notificaciones).
     if (document.querySelector('.overlay')) { teardownLayer(); return; }
 
     let guard = 0;
     while (STEPS[cur] && STEPS[cur].auto && STEPS[cur].auto() && guard++ < 12) {
       cur = STEPS[cur].next;
-      if (cur === 'done' || !STEPS[cur]) { finish(); return; }
+      if (!STEPS[cur]) { finish(); return; }
     }
 
     const step = STEPS[cur];
     if (!step) { finish(); return; }
-
-    if (step.requireRoute && route() !== step.requireRoute) {
-      teardownLayer();
-      location.hash = '#/' + step.requireRoute;
-      return;
-    }
-
     showStep(step);
   }
 
   function ensureRoot() {
-    if (!root) {
-      root = document.createElement('div');
-      document.body.appendChild(root);
-    }
+    if (!root) { root = document.createElement('div'); document.body.appendChild(root); }
     return root;
   }
 
@@ -199,16 +217,11 @@
   function showStep(step) {
     ensureRoot();
     curAllow = step.allow || (step.target ? [step.target] : []);
+    curTargetSel = step.target || null;
     curBlocking = step.kind !== 'pill';
 
-    if (step.kind === 'pill') {
-      renderPill(step);
-      return;
-    }
-    if (step.kind === 'modal') {
-      renderModal(step);
-      return;
-    }
+    if (step.kind === 'pill') { renderPill(step); return; }
+    if (step.kind === 'modal') { renderModal(step); return; }
     renderSpot(step);
   }
 
@@ -217,11 +230,13 @@
       ? `<button class="btn" data-coach="cta">${step.cta.label}</button>`
       : '';
     return `<div class="coach-card${centered ? ' center' : ''}">
-        <div class="coach-eyebrow">${step.eyebrow || 'Guía'}</div>
-        <h3 class="coach-title">${step.title || ''}</h3>
-        <p class="coach-body">${step.body || ''}</p>
-        ${cta}
-        <button class="coach-skip" data-coach="skip">Saltar guía</button>
+        <div class="coach-card-in">
+          <div class="coach-eyebrow">${step.eyebrow || 'Guía'}</div>
+          <h3 class="coach-title">${step.title || ''}</h3>
+          <p class="coach-body">${step.body || ''}</p>
+          ${cta}
+          <button class="coach-skip" data-coach="skip">Saltar guía</button>
+        </div>
       </div>`;
   }
 
@@ -233,52 +248,86 @@
   }
 
   function renderModal(step) {
-    root.className = 'coach modal-dim';
-    root.innerHTML = cardHTML(step, true);
-    wireCard(step);
+    if (builtStep !== cur) {
+      root.className = 'coach modal-dim';
+      root.innerHTML = cardHTML(step, true);
+      wireCard(step);
+      builtStep = cur;
+    }
   }
 
   function renderSpot(step) {
     const el = targetEl(step);
-    // Sin objetivo a la vista (aún no renderizó): mostramos solo la tarjeta
-    // centrada para no dejar al usuario sin instrucción.
+    // Objetivo aún no en pantalla (la vista no renderizó): tarjeta centrada
+    // con la instrucción para no dejar al usuario sin guía.
     if (!el) {
-      root.className = 'coach modal-dim';
-      root.innerHTML = cardHTML(step, true);
-      wireCard(step);
+      if (builtStep !== cur) {
+        root.className = 'coach modal-dim';
+        root.innerHTML = cardHTML(step, true);
+        wireCard(step);
+        builtStep = cur;
+      }
       return;
     }
 
+    // Centramos el objetivo una sola vez al entrar al paso (solo si está
+    // dentro del área scrolleable; las tabs son fijas).
+    const view = document.getElementById('view');
+    if (scrolledForStep !== cur) {
+      if (view && view.contains(el)) {
+        try { el.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch (e) { /* noop */ }
+      }
+      scrolledForStep = cur;
+    }
+
+    // Construimos una sola vez por paso (para animar la entrada una vez);
+    // después solo reposicionamos.
+    if (builtStep !== cur) {
+      root.className = 'coach';
+      root.innerHTML =
+        '<div class="coach-hole"></div><div class="coach-arrow"></div>' +
+        cardHTML(step, false);
+      wireCard(step);
+      builtStep = cur;
+    }
+    positionSpot(el);
+  }
+
+  function positionSpot(el) {
     const r = el.getBoundingClientRect();
     const pad = 8;
     const vh = window.innerHeight;
-    const holeTop = r.top - pad;
-    const holeStyle =
-      `top:${holeTop}px;left:${r.left - pad}px;` +
-      `width:${r.width + pad * 2}px;height:${r.height + pad * 2}px;`;
+    const cx = r.left + r.width / 2;
 
-    // Tarjeta arriba o abajo del objetivo según dónde haya lugar.
-    const below = r.top < vh * 0.55;
-    const vStyle = below
-      ? `top:${r.bottom + 14}px;bottom:auto;`
-      : `bottom:${vh - r.top + 14}px;top:auto;`;
+    const hole = root.querySelector('.coach-hole');
+    hole.style.top = (r.top - pad) + 'px';
+    hole.style.left = (r.left - pad) + 'px';
+    hole.style.width = (r.width + pad * 2) + 'px';
+    hole.style.height = (r.height + pad * 2) + 'px';
 
-    root.className = 'coach';
-    root.innerHTML =
-      `<div class="coach-hole" style="${holeStyle}"></div>` +
-      cardHTML(step, false);
+    // Tarjeta abajo solo si el objetivo está claramente arriba; si está
+    // centrado o abajo, va arriba (más aire, no la tapan las tabs).
+    const below = r.top < vh * 0.42;
     const card = root.querySelector('.coach-card');
-    card.style.cssText += vStyle;
-    wireCard(step);
+    if (below) { card.style.top = (r.bottom + 28) + 'px'; card.style.bottom = 'auto'; }
+    else { card.style.bottom = (vh - r.top + 28) + 'px'; card.style.top = 'auto'; }
+
+    // Flecha entre la tarjeta y el objetivo, apuntando al objetivo.
+    const arrow = root.querySelector('.coach-arrow');
+    arrow.className = 'coach-arrow ' + (below ? 'up' : 'down');
+    arrow.style.left = (cx - 11) + 'px';
+    arrow.style.top = below ? (r.bottom + 8) + 'px' : (r.top - 23) + 'px';
   }
 
   function renderPill(step) {
-    root.className = 'coach';
-    root.innerHTML =
-      `<div class="coach-pill">
-        <span>📦 ${step.body}</span>
-        <a data-coach="sobres" href="#/sobres">Ir</a>
-      </div>`;
+    if (builtStep !== cur) {
+      root.className = 'coach';
+      root.innerHTML =
+        `<div class="coach-pill">
+          <span>📦 ${step.body}</span>
+        </div>`;
+      builtStep = cur;
+    }
   }
 
   // ---- API pública ----
@@ -288,8 +337,9 @@
       active = true;
       cur = 'welcome';
       document.addEventListener('click', onCapture, true);
+      document.addEventListener('wheel', onScrollBlock, { passive: false, capture: true });
+      document.addEventListener('touchmove', onScrollBlock, { passive: false, capture: true });
       window.addEventListener('resize', scheduleReposition);
-      // El contenido scrollea dentro de #view; reposicionamos el spotlight.
       const v = document.getElementById('view');
       if (v) v.addEventListener('scroll', scheduleReposition, { passive: true });
       refresh();
@@ -300,6 +350,7 @@
       clearDone();
       active = true;
       cur = 'welcome';
+      teardownLayer();
       refresh();
     }
   };

@@ -1523,19 +1523,43 @@ button { font-family: inherit; }
 }
 
 /* Spotlight: agujero transparente sobre el objetivo; la sombra gigante
-   atenúa todo lo de alrededor. */
+   atenúa todo lo de alrededor. Pulso + glow dorado para que "respire". */
 .coach-hole {
   position: fixed;
   border-radius: 14px;
-  box-shadow: 0 0 0 9999px rgba(7,6,4,0.86);
   border: 2px solid var(--gold);
   pointer-events: none;
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
   animation: coachPulse 1.7s ease-in-out infinite;
 }
 @keyframes coachPulse {
-  0%, 100% { box-shadow: 0 0 0 9999px rgba(7,6,4,0.86), 0 0 0 0 rgba(212,175,55,0.55); }
-  50%      { box-shadow: 0 0 0 9999px rgba(7,6,4,0.86), 0 0 0 10px rgba(212,175,55,0); }
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(7,6,4,0.88), 0 0 24px rgba(212,175,55,0.30), 0 0 0 0 rgba(212,175,55,0.55); }
+  50%      { box-shadow: 0 0 0 9999px rgba(7,6,4,0.88), 0 0 24px rgba(212,175,55,0.30), 0 0 0 12px rgba(212,175,55,0); }
 }
+
+/* Flecha que late apuntando al elemento marcado. */
+.coach-arrow {
+  position: fixed;
+  width: 0;
+  height: 0;
+  z-index: 92;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45));
+}
+.coach-arrow.up {
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 15px solid var(--gold);
+  animation: coachArrowUp 1s ease-in-out infinite;
+}
+.coach-arrow.down {
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 15px solid var(--gold);
+  animation: coachArrowDown 1s ease-in-out infinite;
+}
+@keyframes coachArrowUp   { 0%,100% { transform: translateY(2px); }  50% { transform: translateY(-6px); } }
+@keyframes coachArrowDown { 0%,100% { transform: translateY(-2px); } 50% { transform: translateY(6px); } }
 
 .coach-card {
   position: fixed;
@@ -1547,14 +1571,31 @@ button { font-family: inherit; }
   border: 1px solid var(--line-strong);
   border-radius: 16px;
   padding: 18px 18px 14px;
+  z-index: 93;
   pointer-events: auto;
-  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-  animation: fade 0.25s ease;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08);
+  animation: coachFade 0.22s ease both;
 }
 .coach-card.center {
   top: 50%;
   transform: translate(-50%, -50%);
 }
+@keyframes coachFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Entrada escalonada de las líneas: aparecen en secuencia (menos estático). */
+.coach-card-in > * {
+  animation: coachItem 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.coach-card-in > *:nth-child(1) { animation-delay: 0.05s; }
+.coach-card-in > *:nth-child(2) { animation-delay: 0.13s; }
+.coach-card-in > *:nth-child(3) { animation-delay: 0.21s; }
+.coach-card-in > *:nth-child(4) { animation-delay: 0.29s; }
+.coach-card-in > *:nth-child(5) { animation-delay: 0.37s; }
+@keyframes coachItem {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .coach-eyebrow {
   font-family: var(--font-display);
   font-size: 11px;
