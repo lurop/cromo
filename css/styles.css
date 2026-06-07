@@ -223,6 +223,26 @@ button { font-family: inherit; }
 }
 .notif-bell svg { width: 18px; height: 18px; display: block; }
 .notif-bell:hover { background: rgba(212,175,55,0.14); border-color: var(--line-strong); }
+
+/* Botón de sonido (mute) */
+.sound-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(212,175,55,0.06);
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.sound-btn svg { width: 18px; height: 18px; display: block; }
+.sound-btn:hover { background: rgba(212,175,55,0.14); border-color: var(--line-strong); }
+.sound-btn:active { transform: scale(0.92); }
+.sound-btn.is-muted { color: var(--text-mute); background: rgba(255,255,255,0.03); }
 .notif-bell:active { transform: scale(0.93); }
 .notif-bell.has-unread { animation: bell-shake 1.2s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes bell-shake {

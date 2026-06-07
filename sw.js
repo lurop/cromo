@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cromo-shell-v16';
+const CACHE_NAME = 'cromo-shell-v17';
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const SHELL_ASSETS = [
   './js/pack.js',
   './js/legends.js',
   './js/notifications.js',
+  './js/audio.js',
   './js/anim.js',
   './js/onboarding.js',
   './js/app.js',

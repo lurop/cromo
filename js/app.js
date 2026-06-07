@@ -25,6 +25,15 @@
   const chipStreak = document.getElementById('chip-streak');
   const chipPurp   = document.getElementById('chip-purp');
   const bellBtn    = document.getElementById('notif-bell');
+  const soundBtn   = document.getElementById('sound-toggle');
+
+  function renderSound() {
+    const muted = C.audio.isMuted();
+    soundBtn.innerHTML = muted ? C.ICON.mute : C.ICON.sound;
+    soundBtn.classList.toggle('is-muted', muted);
+    soundBtn.setAttribute('aria-label', muted ? 'Activar sonido' : 'Silenciar');
+    soundBtn.setAttribute('aria-pressed', String(muted));
+  }
 
   function parseRoute() {
     const raw = (location.hash || '').replace(/^#\/?/, '').toLowerCase();
@@ -93,27 +102,30 @@
 
     if (action === 'open-pack') {
       if (C.state.packs <= 0) return;
+      C.audio.play('packOpen');
       const res = C.pack.openPack();
       C.views.showReveal(res);
       return;
     }
     if (action === 'open-pack-5') {
       if (C.state.packs < 5) return;
+      C.audio.play('packOpen');
       const res = C.pack.openPackBundle(5);
       if (res.length) C.views.showReveal(res);
       return;
     }
     if (action === 'claim-daily') {
-      if (C.pack.claimDaily()) C.render();
+      if (C.pack.claimDaily()) { C.audio.play('reward'); C.render(); }
       return;
     }
     if (action === 'set-team') {
+      C.audio.play('tap');
       C.state.albumTeam = btn.dataset.team;
       C.render();
       return;
     }
     if (action === 'buy') {
-      if (C.pack.buy(btn.dataset.id)) C.render();
+      if (C.pack.buy(btn.dataset.id)) { C.audio.play('buy'); C.render(); }
       return;
     }
     if (action === 'sell') {
@@ -124,6 +136,7 @@
       if (dup <= 0) return;
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      C.audio.play('coin');
       const amount = C.RAR[s.rar].dupe;
       C.anim.flyToPurpChip(btn, amount, {
         onFirstLand: () => {
@@ -138,6 +151,7 @@
       if (total <= 0) return;
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      C.audio.play('coin');
       C.anim.flyToPurpChip(btn, total, {
         onFirstLand: () => {
           C.pack.sellAll();
@@ -151,9 +165,21 @@
   // Campana — abre el panel y marca todo como leído al cerrar.
   bellBtn.addEventListener('click', () => C.views.showNotifs());
 
+  // Botón de sonido (mute on/off).
+  soundBtn.addEventListener('click', () => {
+    C.audio.toggleMute();
+    renderSound();
+  });
+
+  // Tap sutil al navegar por la barra inferior.
+  document.querySelector('.app-tabs').addEventListener('click', (e) => {
+    if (e.target.closest('.tab')) C.audio.play('tap');
+  });
+
   window.addEventListener('hashchange', () => C.render());
   if (!location.hash) location.replace('#/' + DEFAULT_ROUTE);
   C.render();
+  renderSound();
 
   // Arranca la guía de primera vez (no hace nada si ya se completó).
   if (C.onboarding) C.onboarding.init();

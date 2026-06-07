@@ -61,8 +61,11 @@
     rcards.forEach((el, i) => {
       setTimeout(() => {
         el.classList.add('flipped');
-        // En modo denso lanzamos confetti UNA vez al aparecer la primera legendaria.
-        if (el.classList.contains('leg') && !confettiFired) {
+        const isLeg = el.classList.contains('leg');
+        // Sonido por carta: legendaria = momento grande; el resto, giro suave.
+        C.audio.play(isLeg ? 'legendary' : 'flip');
+        // Confetti UNA vez al aparecer la primera legendaria.
+        if (isLeg && !confettiFired) {
           confettiFired = true;
           burst(ov);
         }
@@ -70,6 +73,8 @@
     });
 
     setTimeout(() => {
+      // Floreo de cierre — salvo que ya haya sonado el de legendaria.
+      if (legCount === 0 && newCount > 0) C.audio.play('celebrate');
       const tally = ov.querySelector('#tally');
       let line1 = `<b>${newCount}</b> nueva${newCount === 1 ? '' : 's'}`;
       if (dupCount > 0) line1 += ` · <b>${dupCount}</b> repetida${dupCount === 1 ? '' : 's'}`;
