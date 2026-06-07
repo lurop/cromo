@@ -1506,3 +1506,120 @@ button { font-family: inherit; }
   margin: 14px 4px 4px;
   line-height: 1.4;
 }
+
+/* ============================================================
+   Onboarding — guía de primera vez (coach marks)
+   ============================================================ */
+.coach {
+  position: fixed;
+  inset: 0;
+  z-index: 90;            /* por debajo de los overlays (revelado = 100) */
+  pointer-events: none;  /* el bloqueo lo maneja el listener de captura */
+}
+/* Atenuado de pantalla completa para bienvenida / paso sin objetivo visible. */
+.coach.modal-dim {
+  background: radial-gradient(ellipse at 50% 40%, rgba(40,32,16,0.92), rgba(7,6,4,0.97));
+  animation: fade 0.25s ease;
+}
+
+/* Spotlight: agujero transparente sobre el objetivo; la sombra gigante
+   atenúa todo lo de alrededor. */
+.coach-hole {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(7,6,4,0.86);
+  border: 2px solid var(--gold);
+  pointer-events: none;
+  animation: coachPulse 1.7s ease-in-out infinite;
+}
+@keyframes coachPulse {
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(7,6,4,0.86), 0 0 0 0 rgba(212,175,55,0.55); }
+  50%      { box-shadow: 0 0 0 9999px rgba(7,6,4,0.86), 0 0 0 10px rgba(212,175,55,0); }
+}
+
+.coach-card {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 36px);
+  max-width: 320px;
+  background: linear-gradient(170deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  pointer-events: auto;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+  animation: fade 0.25s ease;
+}
+.coach-card.center {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.coach-eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.coach-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 22px;
+  line-height: 1.05;
+  color: var(--cream);
+  margin: 6px 0 8px;
+}
+.coach-body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0 0 14px;
+}
+.coach-body b { color: var(--gold); font-weight: 700; }
+.coach-card .btn { width: 100%; }
+.coach-skip {
+  display: block;
+  margin: 10px auto 0;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--text-mute);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.coach-skip:hover { color: var(--text-dim); }
+
+/* Pista no-bloqueante (esperando la primera repetida). */
+.coach-pill {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--tabs-h) + 14px + var(--safe-bottom));
+  max-width: calc(100% - 28px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(150deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  pointer-events: auto;
+  animation: fade 0.25s ease;
+}
+.coach-pill b { color: var(--gold); font-weight: 700; }
+.coach-pill a {
+  color: var(--gold);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}

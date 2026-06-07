@@ -81,6 +81,8 @@
     const routeKey = parseRoute();
     renderChrome(routeKey);
     renderView(routeKey);
+    // La guía de primera vez se redibuja sobre la vista ya renderizada.
+    if (C.onboarding) C.onboarding.refresh();
   };
 
   // Acciones de UI por event delegation. Centraliza el "cuando hacés X, mutá estado y repinto".
@@ -152,4 +154,7 @@
   window.addEventListener('hashchange', () => C.render());
   if (!location.hash) location.replace('#/' + DEFAULT_ROUTE);
   C.render();
+
+  // Arranca la guía de primera vez (no hace nada si ya se completó).
+  if (C.onboarding) C.onboarding.init();
 })();
