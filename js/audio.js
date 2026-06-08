@@ -138,105 +138,88 @@
     }
   };
 
-  // --- Ambiente: "gala mundialista" ---
-  // Bed festivo y procedural: pad cálido tipo gala (acordes que rotan) + un
-  // pulso de BOMBO de tribuna y PALMAS en el backbeat (el toque de partido) +
-  // murmullo de hinchada por debajo. Sin melodías ni cantos identificables
-  // (la progresión es la más genérica del pop; nada de himnos) — respeta §2.
-  // Secuenciador con look-ahead sobre el reloj de audio.
-  const BPM = 100;
-  const S16 = 60 / BPM / 4;                 // duración de una semicorchea
-  const CHORDS = [                          // 4 compases: progresión luminosa
-    [261.63, 329.63, 392.00],               // Do mayor
-    [196.00, 246.94, 392.00],               // Sol
-    [220.00, 329.63, 392.00],               // La menor
-    [174.61, 261.63, 349.23]                // Fa
+  // --- Ambiente: "gala teatral" ---
+  // Bed cinematográfico y envolvente, SIN ruido: pad de cuerdas/coro con
+  // acordes mayores7 que evolucionan + reverb de sala (teatro) + un timbal
+  // grave y majestuoso por compás. Tonal puro — nada de ruido blanco/rosa.
+  // Sin melodías ni cantos identificables (§2). Secuenciador look-ahead.
+  const BPM = 70;
+  const BEAT = 60 / BPM;
+  const BAR = BEAT * 4;
+  const CHORDS = [                          // progresión cálida que evoluciona
+    [261.63, 329.63, 392.00, 493.88],       // Do maj7
+    [220.00, 261.63, 329.63, 392.00],       // La m7
+    [174.61, 261.63, 329.63, 440.00],       // Fa maj7
+    [196.00, 293.66, 392.00, 493.88]        // Sol (add)
   ];
 
-  function pinkBuf(seconds) {
-    const len = Math.floor(ctx.sampleRate * seconds);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    let b0 = 0, b1 = 0, b2 = 0;             // ruido rosa (Kellet): natural, no "hiss"
-    for (let i = 0; i < len; i++) {
-      const w = Math.random() * 2 - 1;
-      b0 = 0.99765 * b0 + w * 0.0990460;
-      b1 = 0.96300 * b1 + w * 0.2965164;
-      b2 = 0.57000 * b2 + w * 1.0526913;
-      d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.2;
+  // Respuesta al impulso para el reverb de sala (ruido que decae → cola).
+  function reverbIR(seconds, decay) {
+    const rate = ctx.sampleRate;
+    const len = Math.floor(rate * seconds);
+    const ir = ctx.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
     }
-    return buf;
+    return ir;
   }
 
-  function kick(t, gain) {
+  // Timbal majestuoso (tonal, con caída de tono) — la pulsación teatral.
+  function timpani(freq, t, gain) {
     const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.frequency.setValueAtTime(150, t);
-    o.frequency.exponentialRampToValueAtTime(52, t + 0.12);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq * 1.5, t);
+    o.frequency.exponentialRampToValueAtTime(freq, t + 0.18);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-    o.connect(g).connect(amb.out);
-    o.start(t); o.stop(t + 0.32);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+    o.connect(g).connect(amb.bus);            // a través del reverb → "sala"
+    o.start(t); o.stop(t + 1.2);
   }
 
-  function clap(t, gain) {
-    const dur = 0.13;
-    const len = Math.floor(ctx.sampleRate * dur);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-    const src = ctx.createBufferSource(); src.buffer = buf;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 0.8;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(bp).connect(g).connect(amb.out);
-    src.start(t); src.stop(t + dur);
-  }
-
+  // Acorde de cuerdas: 2 saw detuneados por nota (coro) + sub grave.
   function padChord(freqs, t, dur) {
-    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1600; f.Q.value = 0.4;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.06, t + 0.4);          // attack lento (gala)
-    g.gain.setValueAtTime(0.06, t + dur - 0.5);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);        // release
-    f.connect(g).connect(amb.out);
-    freqs.forEach((fr, i) => {
-      const o = ctx.createOscillator();
-      o.type = 'sawtooth';
-      o.frequency.value = fr;
-      o.detune.value = (i - 1) * 4;                               // leve coro
-      o.connect(f);
-      o.start(t); o.stop(t + dur + 0.1);
+    freqs.forEach((fr) => {
+      [-6, 6].forEach((det) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fr; o.detune.value = det;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.02, t + 0.9);     // attack lento
+        g.gain.setValueAtTime(0.02, t + dur - 1.1);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);   // release largo
+        o.connect(g).connect(amb.pad);
+        o.start(t); o.stop(t + dur + 0.1);
+      });
     });
+    const sub = ctx.createOscillator(); const sg = ctx.createGain();
+    sub.type = 'sine'; sub.frequency.value = freqs[0] / 2;
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.exponentialRampToValueAtTime(0.05, t + 0.9);
+    sg.gain.setValueAtTime(0.05, t + dur - 1.1);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    sub.connect(sg).connect(amb.pad);
+    sub.start(t); sub.stop(t + dur + 0.1);
   }
 
+  // Brillo de gala (campanas suaves) cada tanto, a través del reverb.
   function sparkle(t) {
     [1568, 2093, 2637, 3136].forEach((fr, i) => {
       const o = ctx.createOscillator(); const g = ctx.createGain();
-      const at = t + i * 0.12;
+      const at = t + i * 0.16;
       o.type = 'triangle'; o.frequency.value = fr;
       g.gain.setValueAtTime(0.0001, at);
-      g.gain.exponentialRampToValueAtTime(0.03, at + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
-      o.connect(g).connect(amb.out);
-      o.start(at); o.stop(at + 0.55);
+      g.gain.exponentialRampToValueAtTime(0.018, at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.8);
+      o.connect(g).connect(amb.bus);
+      o.start(at); o.stop(at + 0.85);
     });
   }
 
-  function scheduleStep(s, t) {
-    const inBar = s % 16;
-    // Bombo de tribuna: negra a negra, acento en el 1 + síncope en el "y"
-    // del 2 para el bounce de cancha.
-    if (inBar % 4 === 0) kick(t, inBar === 0 ? 0.6 : 0.4);
-    if (inBar === 6) kick(t, 0.32);
-    // Palmas en el backbeat (2 y 4) — la hinchada acompañando.
-    if (inBar === 4 || inBar === 12) clap(t, 0.1);
-    // Pad: acorde nuevo al inicio de cada compás.
-    if (inBar === 0) padChord(CHORDS[(s / 16) | 0], t, 16 * S16);
-    // Brillo de gala cada 4 compases.
-    if (s === 0) sparkle(t);
+  function scheduleBar(bar, t) {
+    padChord(CHORDS[bar], t, BAR + 0.8);          // acordes legato (se solapan)
+    timpani(CHORDS[bar][0] / 2, t, 0.3);          // timbal en el 1 de cada compás
+    if (bar === 0) sparkle(t + BEAT * 2);         // brillo cada 4 compases
   }
 
   function startAmbient() {
@@ -247,34 +230,42 @@
     const out = ctx.createGain();
     out.gain.value = 0.0001;
     out.connect(master);
-    amb = { out, nodes: [], timer: null, next: 0, step: 0 };
 
-    // Murmullo de hinchada por debajo (rosa filtrado + oleadas lentas).
-    const src = ctx.createBufferSource();
-    src.buffer = pinkBuf(4); src.loop = true;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.5;
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
-    const mg = ctx.createGain(); mg.gain.value = 0.45;
-    src.connect(bp).connect(lp).connect(mg).connect(out);
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.06;
-    const lfoG = ctx.createGain(); lfoG.gain.value = 0.22;
-    lfo.connect(lfoG).connect(mg.gain);
-    src.start(); lfo.start();
-    amb.nodes.push(src, lfo);
+    // Reverb de sala (teatro) — la clave del "envolvente".
+    const conv = ctx.createConvolver();
+    conv.buffer = reverbIR(3.2, 2.5);
+    const wet = ctx.createGain(); wet.gain.value = 0.7;
+    const dry = ctx.createGain(); dry.gain.value = 0.55;
+    conv.connect(wet).connect(out);
+    dry.connect(out);
 
-    out.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 2); // fade-in
+    // 'bus' = mezcla con reverb + dry (timbal, brillo).
+    const bus = ctx.createGain(); bus.gain.value = 1;
+    bus.connect(conv); bus.connect(dry);
 
-    // Secuenciador.
-    amb.next = ctx.currentTime + 0.15;
-    amb.step = 0;
+    // 'pad' = cuerdas con un lowpass que respira (LFO) antes del bus.
+    const padLp = ctx.createBiquadFilter(); padLp.type = 'lowpass';
+    padLp.frequency.value = 1100; padLp.Q.value = 0.3;
+    padLp.connect(bus);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.05;
+    const lfoG = ctx.createGain(); lfoG.gain.value = 350;
+    lfo.connect(lfoG).connect(padLp.frequency);
+    lfo.start();
+
+    amb = { out, pad: padLp, bus, nodes: [lfo], timer: null, nextBar: 0, bar: 0 };
+
+    out.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + 2.5); // fade-in
+
+    amb.nextBar = ctx.currentTime + 0.25;
+    amb.bar = 0;
     amb.timer = setInterval(() => {
       if (!amb) return;
-      while (amb.next < ctx.currentTime + 0.12) {
-        try { scheduleStep(amb.step, amb.next); } catch (e) { /* noop */ }
-        amb.next += S16;
-        amb.step = (amb.step + 1) % 64;       // bucle de 4 compases
+      while (amb.nextBar < ctx.currentTime + 0.6) {
+        try { scheduleBar(amb.bar, amb.nextBar); } catch (e) { /* noop */ }
+        amb.nextBar += BAR;
+        amb.bar = (amb.bar + 1) % 4;
       }
-    }, 25);
+    }, 120);
   }
 
   function stopAmbient() {
