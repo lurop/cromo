@@ -3,17 +3,18 @@
 > Documento de handoff. Cada sesión de trabajo lo actualizamos al final.
 > Para el contexto general del producto, ver `CLAUDE.md`.
 
-**Última actualización:** 2026-06-06
-**Fase activa:** Fase 0 cerrada · próxima: Fase 1
+**Última actualización:** 2026-06-07
+**Fase activa:** Fase 0 cerrada (loop + onboarding + audio) · próxima: Fase 1
 
 ---
 
 ## Estado actual
 
-- **App pública**: https://cromo2026.luropdeuce.workers.dev
+- **App pública**: https://cromo2026.luropdeuce.workers.dev (Cloudflare **Workers**, name `cromo2026`)
 - **Repo**: https://github.com/lurop/cromo (privado)
-- **Auto-deploy**: cada `git push` a `main` → live en ~30s (Cloudflare Workers/Pages, conectado al repo)
+- **⚠️ NO hay auto-deploy**: pushear a `main` NO publica nada. Hay que **deployar a mano** (ver "Cómo deployar" abajo). Verificado 2026-06-07.
 - **Branch principal**: `main`
+- **Cache del SW actual**: `cromo-shell-v22` (bumpear en cada cambio para invalidar)
 
 ---
 
@@ -26,7 +27,7 @@ MVP jugable de un jugador, estado en memoria, sin backend.
 - Carga ordenada por `<script defer>` en `index.html`
 - Event delegation centralizada en `#view` (acciones por `data-action`)
 - Routing por hash (`#/album`, `#/sobres`, etc.)
-- PWA instalable: `manifest.json` + service worker con cache versionada (actual: `cromo-shell-v13`)
+- PWA instalable: `manifest.json` + service worker con cache versionada (actual: `cromo-shell-v22`)
 - Estética "Noche de campeón": negro + oro, Anton (display) + Hanken Grotesk (cuerpo)
 
 ### Estructura de archivos
@@ -47,7 +48,9 @@ MVP jugable de un jugador, estado en memoria, sin backend.
 │  ├─ pack.js            # Apertura de sobres, pity, conversiones, hooks de notifs
 │  ├─ legends.js         # Mapa de leyendas (vacío en Fase 0; placeholder honesto)
 │  ├─ notifications.js   # Sistema de eventos in-memory + helpers por tipo
+│  ├─ audio.js           # SFX + música de fondo, todo sintetizado por código (Web Audio)
 │  ├─ anim.js            # Animación de gemas volando al chip de Purpurina
+│  ├─ onboarding.js      # Guía de primera vez (coach marks)
 │  ├─ app.js             # Bootstrap: routing, render principal, handlers
 │  └─ views/
 │     ├─ sticker.js      # Card de figurita reutilizable
@@ -113,6 +116,29 @@ MVP jugable de un jugador, estado en memoria, sin backend.
 
 ---
 
+## Sesión 2026-06-07 — Onboarding + Audio + UX
+
+**Guía de onboarding de primera vez** (`js/onboarding.js` + estilos `.coach-*`)
+- Coach marks: spotlight (agujero + box-shadow) + flecha animada + tarjeta sobre un elemento REAL.
+- **No navega por el usuario**: marca la tab/botón a tocar y él hace el toque. Avanza observando el estado real (ruta, sobres abiertos, repetidas), sin tocar la lógica de juego.
+- Bloquea el scroll y centra el objetivo mientras hay cartel. Mensajes con entrada escalonada.
+- Flujo: bienvenida → marca Sobres → abrí sobre → marca Álbum → tour → volvé a Sobres → (pista) → primera repetida → marca Cambios → cómo convertir.
+- Se engancha con 1 línea en `app.js` (`C.onboarding.refresh()` al final de `C.render()`) + `init()` al arrancar.
+- "Ya vi la guía" en `localStorage` (`cromo_onboarding_v2`). Para reverla: consola `Cromo.onboarding.reset()`.
+
+**Audio** (`js/audio.js`) — todo sintetizado por código (Web Audio, cero archivos)
+- **SFX**: abrir sobre, giro de carta, legendaria, floreo de cierre, moneda, reclamar/comprar, tap de nav.
+- **Cascada de purpurina**: `gemTick` (tin cristalino que sube de tono) por cada gema que aterriza (en `anim.js`).
+- **Rugido de gol** (`goal`): estallido de multitud + voces con whoop + surge grave, con reverb. Se dispara en **legendaria** (1 vez) y al **completar equipo/álbum** (flag `bigMoment` desde `pack.js`).
+- **Música de fondo "gala teatral"**: pad de cuerdas (acordes maj7 que rotan) → lowpass con LFO → ConvolverNode (reverb de sala) + dry, timbal tonal por compás, brillo ocasional. Secuenciador look-ahead. **Sin ruido** (Lucas rechazó el murmullo, "sonaba a lluvia"). **Encendida por defecto** (`cromo_ambient`, arranca al primer gesto por autoplay policy).
+- **Sin himnos/cantos/melodías identificables** (§2 legal) — solo ritmo + progresiones genéricas.
+- **Menú de audio**: el botón 🔈 del header abre un popover con 2 switches (Efectos / Ambiente). Mute global baja el `master`.
+
+**UX**
+- Botón de convertir repetidas (Cambios): ahora dice **"Convertir"** arriba del valor `⬦+N` (antes era solo el ícono, no era intuitivo).
+
+---
+
 ## Decisiones de diseño tomadas
 
 1. **Las repetidas no se auto-convierten** — quedan en inventario para fomentar el intercambio (sección 10 del CLAUDE.md). Convertir es una "salida de emergencia" con valor reducido para que cambiar con otros jugadores siempre sea más rentable.
@@ -143,7 +169,24 @@ git commit -m "descripción del cambio"
 git push
 ```
 
-Cloudflare redeploya solo en ~30s.
+## Cómo deployar (⚠️ NO es automático)
+
+Pushear a GitHub **no publica nada**. Para que salga en la URL pública hay que deployar a mano con `wrangler`:
+
+1. Lucas crea un **API token**: dash.cloudflare.com → My Profile → API Tokens → plantilla "Edit Cloudflare Workers" → lo pega en el chat.
+2. Deploy con export limpio (así NUNCA se sube `.git` ni `referencia/`):
+   ```bash
+   cd C:/Users/LUCAS/Desktop/CROMO
+   rm -rf dist && mkdir dist && git archive HEAD | tar -x -C dist
+   rm -rf dist/referencia dist/*.md dist/.gitignore
+   printf 'name = "cromo2026"\ncompatibility_date = "2025-06-01"\n\n[assets]\ndirectory = "./"\n' > dist/wrangler.toml
+   cd dist && CLOUDFLARE_API_TOKEN=<token> npx --yes wrangler@latest deploy
+   ```
+3. Verificar versión viva: `curl https://cromo2026.luropdeuce.workers.dev/sw.js` → mirar el `CACHE_NAME`.
+4. **Bumpear `CACHE_NAME` en `sw.js`** en cada cambio, sino el SW sirve la versión vieja.
+5. `wrangler.toml`, `dist/`, `.wrangler/` están gitignoreados (no se commitean).
+
+> El token es secreto: una vez usado, Lucas debe **revocarlo** (mismo panel). Para el próximo deploy, token nuevo.
 
 ---
 
@@ -189,6 +232,7 @@ Pasos en orden sugerido:
 
 ## Pendientes menores (cuando quieras, no urgentes)
 
-- Sonido: efectos para apertura, revelado de legendaria, conversión a Purpurina (sección 16 CLAUDE.md)
+- Audio: ✅ hecho (SFX + música de fondo + rugido de gol). Posibles ajustes finos de mezcla si Lucas pide.
 - Validación legal con abogado antes del lanzamiento público
 - Hacer screenshots para la futura ficha de Play Store (TWA en Fase 3)
+- Evaluar mover el `localStorage` de onboarding/audio al perfil de Supabase en Fase 1
