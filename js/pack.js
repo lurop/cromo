@@ -56,6 +56,7 @@
     const { state, HARD_PITY } = C;
     const total = C.TOTAL;
     const res = [];
+    let bigMoment = false; // este sobre cerró un equipo o el álbum (→ rugido)
     for (let i = 0; i < 5; i++) {
       const willBePity = state.sinceLeg + 1 >= HARD_PITY;
       const rar = rollRarity();
@@ -81,11 +82,11 @@
         if (!lineWas && lineNow) C.notif.lineComplete(s.team, s.line);
 
         const teamNow = teamDone(s.team, state.owned);
-        if (!teamWas && teamNow) C.notif.teamComplete(s.team);
+        if (!teamWas && teamNow) { C.notif.teamComplete(s.team); bigMoment = true; }
 
         const pctAfter = Math.floor((state.owned.size / total) * 100);
         for (const m of MILESTONES) {
-          if (pctBefore < m && pctAfter >= m) C.notif.milestone(m);
+          if (pctBefore < m && pctAfter >= m) { C.notif.milestone(m); if (m === 100) bigMoment = true; }
         }
       }
 
@@ -95,6 +96,7 @@
       res.push({ s, isNew });
     }
     state.packs--;
+    res.bigMoment = bigMoment;
     return res;
   }
 
@@ -104,7 +106,13 @@
     n = Math.min(n, state.packs);
     if (n <= 0) return [];
     const all = [];
-    for (let i = 0; i < n; i++) all.push(...openPack());
+    let bigMoment = false;
+    for (let i = 0; i < n; i++) {
+      const r = openPack();
+      if (r.bigMoment) bigMoment = true;
+      all.push(...r);
+    }
+    all.bigMoment = bigMoment;
     return all;
   }
 

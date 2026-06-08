@@ -58,12 +58,19 @@
 
     const rcards = [...ov.querySelectorAll('.rcard')];
     let confettiFired = false;
+    let goalRoared = false;
     rcards.forEach((el, i) => {
       setTimeout(() => {
         el.classList.add('flipped');
         const isLeg = el.classList.contains('leg');
-        // Sonido por carta: legendaria = momento grande; el resto, giro suave.
-        C.audio.play(isLeg ? 'legendary' : 'flip');
+        // Sonido por carta. Legendaria = momento grande: chispa dorada +
+        // rugido de gol (una sola vez aunque haya varias). El resto, giro suave.
+        if (isLeg) {
+          C.audio.play('legendary');
+          if (!goalRoared) { C.audio.play('goal'); goalRoared = true; }
+        } else {
+          C.audio.play('flip');
+        }
         // Confetti UNA vez al aparecer la primera legendaria.
         if (isLeg && !confettiFired) {
           confettiFired = true;
@@ -73,8 +80,10 @@
     });
 
     setTimeout(() => {
-      // Floreo de cierre — salvo que ya haya sonado el de legendaria.
-      if (legCount === 0 && newCount > 0) C.audio.play('celebrate');
+      // Cierre: si el sobre cerró un equipo/álbum, rugido de gol (si no rugió
+      // ya por una legendaria); si no, un floreo.
+      if (res.bigMoment && !goalRoared) C.audio.play('goal');
+      else if (legCount === 0 && newCount > 0) C.audio.play('celebrate');
       const tally = ov.querySelector('#tally');
       let line1 = `<b>${newCount}</b> nueva${newCount === 1 ? '' : 's'}`;
       if (dupCount > 0) line1 += ` · <b>${dupCount}</b> repetida${dupCount === 1 ? '' : 's'}`;

@@ -18,6 +18,7 @@
   let muted = false;
   let ambOn = false;
   let amb = null; // nodos del ambiente activo
+  let sfxRev = null; // reverb compartido para SFX grandes (rugido)
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { /* noop */ }
   // Ambiente ENCENDIDO por defecto; respeta si el usuario lo apagó a mano.
   try { const a = localStorage.getItem(AMB_KEY); ambOn = a === null ? true : a === '1'; } catch (e) { ambOn = true; }
@@ -101,6 +102,17 @@
     }));
   }
 
+  // Reverb compartido (sala) para los SFX grandes — se crea una sola vez.
+  function sfxReverb() {
+    if (sfxRev) return sfxRev;
+    const conv = ctx.createConvolver();
+    conv.buffer = reverbIR(2.4, 2.2);    // reverbIR está definido más abajo (hoist)
+    const wet = ctx.createGain(); wet.gain.value = 0.5;
+    conv.connect(wet).connect(master);
+    sfxRev = conv;
+    return sfxRev;
+  }
+
   // --- Catálogo de sonidos ---
   const SOUNDS = {
     tap() {
@@ -135,6 +147,69 @@
     },
     celebrate() {
       arp([659.25, 783.99, 987.77, 1174.7, 1568], { type: 'triangle', step: 0.06, dur: 0.3, gain: 0.07 });
+    },
+    // Rugido de gol: estallido de multitud (ruido rosa con barrido) + voces
+    // "¡aaah!" con whoop ascendente + surge grave, bañado en reverb de sala.
+    // Para momentos grandes (legendaria, completar equipo/álbum).
+    goal() {
+      const t = ctx.currentTime;
+      const rev = sfxReverb();
+      const dur = 2.6;
+
+      const len = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99765 * b0 + w * 0.0990460;
+        b1 = 0.96300 * b1 + w * 0.2965164;
+        b2 = 0.57000 * b2 + w * 1.0526913;
+        d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.18;
+      }
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
+      bp.frequency.setValueAtTime(600, t);
+      bp.frequency.linearRampToValueAtTime(1300, t + 0.4);   // se enciende
+      bp.frequency.linearRampToValueAtTime(800, t + 1.6);    // se asienta
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.5, t + 0.16);   // estallido
+      ng.gain.exponentialRampToValueAtTime(0.18, t + 1.0);   // sostiene
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur); // baja
+      src.connect(bp).connect(ng);
+      ng.connect(master); ng.connect(rev);
+      src.start(t); src.stop(t + dur);
+
+      // Voces "¡aaah!" — cluster con whoop ascendente.
+      [196, 233, 294, 392].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const lp = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.exponentialRampToValueAtTime(f * 1.05, t + 0.35);
+        o.detune.value = (i - 1.5) * 6;
+        lp.type = 'lowpass'; lp.frequency.value = 1100;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.05, t + 0.14);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.1);
+        o.connect(lp).connect(g);
+        g.connect(master); g.connect(rev);
+        o.start(t); o.stop(t + 2.2);
+      });
+
+      // Surge grave inicial (la oleada).
+      const sub = ctx.createOscillator();
+      const sg = ctx.createGain();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(90, t);
+      sub.frequency.exponentialRampToValueAtTime(48, t + 0.5);
+      sg.gain.setValueAtTime(0.0001, t);
+      sg.gain.exponentialRampToValueAtTime(0.22, t + 0.04);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      sub.connect(sg).connect(master);
+      sub.start(t); sub.stop(t + 0.75);
     }
   };
 
