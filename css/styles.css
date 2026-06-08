@@ -1213,6 +1213,17 @@ button { font-family: inherit; }
   flex: 0 0 auto;
 }
 .dupe-actions .btn.sm { min-width: 84px; text-align: center; }
+/* Botón de convertir: verbo claro arriba + lo que recibís abajo. */
+.dupe-actions .sell-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.05;
+  padding: 6px 10px;
+}
+.dupe-actions .sell-btn .sell-verb { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+.dupe-actions .sell-btn .cost { font-size: 13px; }
 
 /* ============================================================
    Tabs (barra inferior)

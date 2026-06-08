@@ -132,6 +132,16 @@
       // Purpurina: dos notas brillantes hacia arriba.
       arp([1046.5, 1568], { type: 'triangle', step: 0.07, dur: 0.16, gain: 0.08 });
     },
+    // Tin cristalino por cada gema que aterriza (cascada que sube de tono):
+    // sensación de "diamantes cargándose". Recibe {i, n}.
+    gemTick(o) {
+      o = o || {};
+      const n = Math.max(o.n || 6, 1);
+      const i = Math.min(o.i || 0, n);
+      const f = 1046.5 * Math.pow(2, i / n);              // sube hasta ~1 octava
+      tone({ freq: f, type: 'triangle', dur: 0.13, gain: 0.05, attack: 0.003 });
+      tone({ freq: f * 2.01, type: 'sine', dur: 0.08, gain: 0.02, attack: 0.002 }); // brillo de cristal
+    },
     reward() {
       // Acorde mayor ascendente (reclamar racha).
       arp([523.25, 659.25, 783.99], { type: 'triangle', step: 0.09, dur: 0.22, gain: 0.09 });
@@ -357,13 +367,13 @@
   }
 
   // --- API ---
-  function play(name) {
+  function play(name, arg) {
     if (muted) return;
     if (!ensureCtx()) return;
     if (ctx.state === 'suspended') ctx.resume();
     const fn = SOUNDS[name];
     if (!fn) return;
-    try { fn(); } catch (e) { /* no romper la UI por audio */ }
+    try { fn(arg); } catch (e) { /* no romper la UI por audio */ }
   }
 
   function setMuted(v) {

@@ -19,7 +19,9 @@
       <div class="dupe-actions">
         <button class="btn sm ghost" data-action="trade" data-id="${stickerId}" disabled
                 title="El intercambio entre usuarios llega en Fase 1">Cambiar</button>
-        <button class="btn sm" data-action="sell" data-id="${stickerId}">
+        <button class="btn sm sell-btn" data-action="sell" data-id="${stickerId}"
+                title="Convertir esta repetida en Purpurina">
+          <span class="sell-verb">Convertir</span>
           <span class="cost" style="color:#241a05">${C.ICON.gem}+${r.dupe}</span>
         </button>
       </div>

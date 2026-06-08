@@ -70,6 +70,8 @@
       const total = delay + dur;
       setTimeout(() => {
         g.remove();
+        // Tin cristalino al aterrizar cada gema (sube de tono → "cargándose").
+        if (C.audio) C.audio.play('gemTick', { i: landed, n: count });
         landed++;
         if (!firstLandFired) {
           firstLandFired = true;
